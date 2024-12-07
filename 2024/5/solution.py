@@ -3,9 +3,12 @@
 def main():
     data = read_input()
     rules, pages = get_print_config(data)
-    ordered_pages = detect_correctly_ordered_pages(rules, pages)
+    ordered_pages, unordered_pages = get_pages_to_print(rules, pages)
     medians = get_medians(ordered_pages)
     print('medians sum: ', sum(medians))
+    reordered_pages = fix_unordered_pages(rules, unordered_pages)
+    medians = get_medians(reordered_pages)
+    print('medians sum - fixed ones: ', sum(medians))
 
 
 def read_input():
@@ -27,13 +30,33 @@ def get_print_config(data):
     return ordering_rules, pages
 
 
-def detect_correctly_ordered_pages(ordering_rules, pages):
-    result = []
+def get_pages_to_print(ordering_rules, pages):
+    ordered = []
+    unordered = []
     for p in pages:
         applying_rules = [r for r in ordering_rules if rule_applies(r, p)]
         if all([validate_rule(r, p) for r in applying_rules]):
-            result.append(p)
+            ordered.append(p)
+        else:
+            unordered.append(p)
+    return ordered, unordered
+
+
+def fix_unordered_pages(ordering_rules, unordered_pages):
+    result = []
+    for p in unordered_pages:
+        applying_rules = [r for r in ordering_rules if rule_applies(r, p)]
+        pages_after = get_pages_after(p, applying_rules)
+        srs = sorted(pages_after.items(), key=lambda item: len(item[1]))
+        result.append([k for k, _ in srs])
     return result
+
+
+def get_pages_after(pages, rules):
+    res = {p: set() for p in pages}
+    for rb, ra in rules:
+        res[ra].add(rb)
+    return res
 
 
 def rule_applies(rule, pages):
